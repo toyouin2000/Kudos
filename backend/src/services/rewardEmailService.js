@@ -1,14 +1,29 @@
-const nodemailer = require("nodemailer");
+// =====================================================
+// KUDOS EMAIL SERVICE
+// =====================================================
+//
+// Uses Brevo HTTPS API.
+// No SMTP / Nodemailer required.
+//
+// Works with Render Free because the email request
+// goes over HTTPS.
+//
+// =====================================================
+
 
 // =====================================================
-// TEST EMAIL CONFIGURATION
+// CONFIGURATION
 // =====================================================
 
-const EMAIL_USER =
-  process.env.EMAIL_USER;
+const BREVO_API_KEY =
+  process.env.BREVO_API_KEY;
 
-const EMAIL_PASSWORD =
-  process.env.EMAIL_PASSWORD;
+const EMAIL_FROM =
+  process.env.EMAIL_FROM;
+
+const EMAIL_FROM_NAME =
+  process.env.EMAIL_FROM_NAME ||
+  "Kudos";
 
 const STATUS_CC_EMAIL =
   process.env.REWARD_STATUS_CC_EMAIL ||
@@ -19,81 +34,310 @@ const STATUS_CC_EMAIL =
 // VALIDATE CONFIG
 // =====================================================
 
-if (!EMAIL_USER) {
+if (!BREVO_API_KEY) {
+
   console.warn(
-    "WARNING: EMAIL_USER is missing."
+    "WARNING: BREVO_API_KEY is missing."
   );
+
 }
 
-if (!EMAIL_PASSWORD) {
+if (!EMAIL_FROM) {
+
   console.warn(
-    "WARNING: EMAIL_PASSWORD is missing."
+    "WARNING: EMAIL_FROM is missing."
   );
+
 }
 
 
 // =====================================================
-// GMAIL SMTP TRANSPORT
+// BREVO API
 // =====================================================
 
-const transporter =
-  nodemailer.createTransport({
+const BREVO_URL =
+  "https://api.brevo.com/v3/smtp/email";
 
-    service: "gmail",
 
-    auth: {
-      user:
-        EMAIL_USER,
+// =====================================================
+// SEND THROUGH BREVO
+// =====================================================
 
-      pass:
-        EMAIL_PASSWORD,
+async function sendBrevoEmail({
+
+  recipientEmail,
+
+  recipientName,
+
+  subject,
+
+  text,
+
+  html,
+
+  cc = true,
+
+}) {
+
+  if (!BREVO_API_KEY) {
+
+    throw new Error(
+      "BREVO_API_KEY is missing."
+    );
+
+  }
+
+  if (!EMAIL_FROM) {
+
+    throw new Error(
+      "EMAIL_FROM is missing."
+    );
+
+  }
+
+  if (!recipientEmail) {
+
+    throw new Error(
+      "Recipient email is required."
+    );
+
+  }
+
+
+  const payload = {
+
+    sender: {
+
+      name:
+        EMAIL_FROM_NAME,
+
+      email:
+        EMAIL_FROM,
+
     },
 
-  });
+    to: [
+
+      {
+
+        email:
+          recipientEmail,
+
+        name:
+          recipientName ||
+          "Kudos User",
+
+      },
+
+    ],
+
+    subject,
+
+    textContent:
+      text,
+
+    htmlContent:
+      html,
+
+  };
+
+
+  // ===================================================
+  // CC TEST ACCOUNT
+  // ===================================================
+
+  if (
+
+    cc &&
+
+    STATUS_CC_EMAIL &&
+
+    STATUS_CC_EMAIL.toLowerCase() !==
+      recipientEmail.toLowerCase()
+
+  ) {
+
+    payload.cc = [
+
+      {
+
+        email:
+          STATUS_CC_EMAIL,
+
+      },
+
+    ];
+
+  }
+
+
+  // ===================================================
+  // SEND
+  // ===================================================
+
+  const response =
+    await fetch(
+      BREVO_URL,
+      {
+
+        method:
+          "POST",
+
+        headers: {
+
+          accept:
+            "application/json",
+
+          "api-key":
+            BREVO_API_KEY,
+
+          "content-type":
+            "application/json",
+
+        },
+
+        body:
+          JSON.stringify(
+            payload
+          ),
+
+      }
+    );
+
+
+  const responseText =
+    await response.text();
+
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(
+        responseText
+      );
+
+  } catch {
+
+    result = {
+
+      raw:
+        responseText,
+
+    };
+
+  }
+
+
+  // ===================================================
+  // BREVO ERROR
+  // ===================================================
+
+  if (!response.ok) {
+
+    console.error(
+      "Brevo email API error:",
+      {
+
+        status:
+          response.status,
+
+        response:
+          result,
+
+      }
+    );
+
+    throw new Error(
+
+      result.message ||
+
+      result.code ||
+
+      `Brevo email API failed with status ${response.status}`
+
+    );
+
+  }
+
+
+  console.log(
+    "Brevo email sent:",
+    {
+
+      recipientEmail,
+
+      cc:
+        cc
+          ? STATUS_CC_EMAIL
+          : undefined,
+
+      messageId:
+        result.messageId,
+
+    }
+  );
+
+
+  return {
+
+    success:
+      true,
+
+    messageId:
+      result.messageId,
+
+  };
+
+}
 
 
 // =====================================================
 // VERIFY EMAIL CONNECTION
 // =====================================================
+//
+// Unlike SMTP, there is no persistent connection.
+// We simply verify that the API key exists.
+//
+// =====================================================
 
 async function verifyEmailConnection() {
 
-  try {
-
-    await transporter.verify();
-
-    console.log(
-      "Email service connected successfully."
-    );
-
-    return true;
-
-  } catch (error) {
+  if (!BREVO_API_KEY) {
 
     console.error(
-      "Email service connection failed:",
-      error.message
+      "Brevo email service is not configured."
     );
 
     return false;
 
   }
 
+
+  if (!EMAIL_FROM) {
+
+    console.error(
+      "Brevo EMAIL_FROM is not configured."
+    );
+
+    return false;
+
+  }
+
+
+  console.log(
+    "Brevo email service configured successfully."
+  );
+
+
+  return true;
+
 }
 
 
 // =====================================================
 // MASK UPI
-// =====================================================
-//
-// We do not store the user's UPI ID.
-// If a masked value is temporarily available,
-// this function can safely display it.
-//
-// Examples:
-//
-// abc123@upi → ab***@upi
-// test@upi   → te***@upi
 // =====================================================
 
 function maskUpi(
@@ -108,7 +352,9 @@ function maskUpi(
 
 
   const value =
-    String(upiId);
+    String(
+      upiId
+    );
 
 
   const atIndex =
@@ -150,12 +396,16 @@ function maskUpi(
 
 
   return (
+
     username.substring(
       0,
       2
     ) +
+
     "***" +
+
     domain
+
   );
 
 }
@@ -178,6 +428,7 @@ function formatDate(
   return value.toLocaleString(
     "en-IN",
     {
+
       timeZone:
         "Asia/Kolkata",
 
@@ -210,11 +461,16 @@ function getStatusContent(
   status
 ) {
 
-  switch (status) {
+  switch (
+    String(
+      status || ""
+    ).toLowerCase()
+  ) {
 
-    // -----------------------------------------------
+
+    // =================================================
     // PROCESSING
-    // -----------------------------------------------
+    // =================================================
 
     case "processing":
 
@@ -232,13 +488,19 @@ function getStatusContent(
       };
 
 
-    // -----------------------------------------------
+    // =================================================
     // SUCCESS
-    // -----------------------------------------------
+    // =================================================
 
     case "claimed":
 
     case "processed":
+
+    case "success":
+
+    case "successful":
+
+    case "completed":
 
       return {
 
@@ -254,11 +516,13 @@ function getStatusContent(
       };
 
 
-    // -----------------------------------------------
+    // =================================================
     // FAILED
-    // -----------------------------------------------
+    // =================================================
 
     case "failed":
+
+    case "failure":
 
       return {
 
@@ -274,9 +538,9 @@ function getStatusContent(
       };
 
 
-    // -----------------------------------------------
+    // =================================================
     // REVERSED
-    // -----------------------------------------------
+    // =================================================
 
     case "reversed":
 
@@ -294,9 +558,49 @@ function getStatusContent(
       };
 
 
-    // -----------------------------------------------
+    // =================================================
+    // PENDING
+    // =================================================
+
+    case "pending":
+
+      return {
+
+        label:
+          "Pending",
+
+        title:
+          "Your Kudos reward is pending",
+
+        message:
+          "Your Kudos reward has been created and is waiting to be processed.",
+
+      };
+
+
+    // =================================================
+    // EXPIRED
+    // =================================================
+
+    case "expired":
+
+      return {
+
+        label:
+          "Expired",
+
+        title:
+          "Your Kudos reward has expired",
+
+        message:
+          "Your Kudos reward claim or payout has expired and could not be completed.",
+
+      };
+
+
+    // =================================================
     // DEFAULT
-    // -----------------------------------------------
+    // =================================================
 
     default:
 
@@ -311,7 +615,8 @@ function getStatusContent(
 
         message:
           `Your Kudos reward status has been updated to ${
-            status || "updated"
+            status ||
+            "updated"
           }.`,
       };
 
@@ -361,24 +666,6 @@ async function sendPayoutStatusEmail({
   }
 
 
-  if (!EMAIL_USER) {
-
-    throw new Error(
-      "EMAIL_USER is missing."
-    );
-
-  }
-
-
-  if (!EMAIL_PASSWORD) {
-
-    throw new Error(
-      "EMAIL_PASSWORD is missing."
-    );
-
-  }
-
-
   // ===================================================
   // STATUS
   // ===================================================
@@ -403,11 +690,13 @@ async function sendPayoutStatusEmail({
     numericAmount.toLocaleString(
       "en-IN",
       {
+
         minimumFractionDigits:
           2,
 
         maximumFractionDigits:
           2,
+
       }
     );
 
@@ -441,13 +730,17 @@ async function sendPayoutStatusEmail({
 
 
   // ===================================================
-  // OPTIONAL FAILURE REASON
+  // FAILURE SECTION
   // ===================================================
 
   const failureSection =
+
     (
+
       status === "failed" ||
+
       status === "reversed"
+
     ) && failureReason
 
       ? `
@@ -466,7 +759,9 @@ async function sendPayoutStatusEmail({
             Reason:
           </strong>
 
-          ${failureReason}
+          ${escapeHtml(
+            failureReason
+          )}
 
         </div>
 
@@ -489,12 +784,16 @@ async function sendPayoutStatusEmail({
 
   <meta charset="UTF-8" />
 
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+
   <title>
     Kudos Reward
   </title>
 
 </head>
-
 
 <body
   style="
@@ -573,8 +872,10 @@ async function sendPayoutStatusEmail({
       >
 
         Hi ${
-          recipientName ||
-          "there"
+          escapeHtml(
+            recipientName ||
+            "there"
+          )
         },
 
       </p>
@@ -728,7 +1029,10 @@ async function sendPayoutStatusEmail({
               word-break:break-all;
             "
           >
-            ${payoutId || "N/A"}
+            ${escapeHtml(
+              payoutId ||
+              "N/A"
+            )}
           </td>
 
         </tr>
@@ -753,7 +1057,10 @@ async function sendPayoutStatusEmail({
               word-break:break-all;
             "
           >
-            ${referenceId || "N/A"}
+            ${escapeHtml(
+              referenceId ||
+              "N/A"
+            )}
           </td>
 
         </tr>
@@ -788,10 +1095,11 @@ async function sendPayoutStatusEmail({
       ${failureSection}
 
 
-      <!-- FAILURE HELP -->
+      <!-- FAILED -->
 
       ${
         status === "failed"
+
           ? `
 
             <div
@@ -812,12 +1120,16 @@ async function sendPayoutStatusEmail({
             </div>
 
           `
+
           : ""
       }
 
 
+      <!-- REVERSED -->
+
       ${
         status === "reversed"
+
           ? `
 
             <div
@@ -838,6 +1150,36 @@ async function sendPayoutStatusEmail({
             </div>
 
           `
+
+          : ""
+      }
+
+
+      <!-- EXPIRED -->
+
+      ${
+        status === "expired"
+
+          ? `
+
+            <div
+              style="
+                margin-top:24px;
+                padding:16px;
+                background:#f3f4f6;
+                border-radius:8px;
+                color:#374151;
+                line-height:1.5;
+              "
+            >
+
+              This reward has expired and
+              cannot be processed.
+
+            </div>
+
+          `
+
           : ""
       }
 
@@ -856,8 +1198,8 @@ async function sendPayoutStatusEmail({
       "
     >
 
-      This is an automated transaction notification
-      from Kudos.
+      This is an automated transaction
+      notification from Kudos.
 
       <br />
 
@@ -883,23 +1225,31 @@ async function sendPayoutStatusEmail({
 Kudos Reward Transaction Update
 
 Hi ${
-  recipientName ||
-  "there"
-},
+    recipientName ||
+    "there"
+  },
 
 ${statusContent.message}
+
 
 TRANSACTION DETAILS
 
 Reward Amount: ₹${formattedAmount}
+
 Points: ${points || 0}
+
 UPI: ${displayedUpi}
+
 Status: ${statusContent.label}
-Payout ID: ${payoutId || "N/A"}
-Transaction Reference: ${
-  referenceId || "N/A"
-}
-Date: ${formattedDate}
+
+Payout ID:
+${payoutId || "N/A"}
+
+Transaction Reference:
+${referenceId || "N/A"}
+
+Date:
+${formattedDate}
 
 ${
   failureReason
@@ -915,26 +1265,24 @@ Please do not reply to this email.
 
 
   // ===================================================
-  // SEND EMAIL
+  // SEND
   // ===================================================
 
-  const info =
-    await transporter.sendMail({
+  const result =
+    await sendBrevoEmail({
 
-      from:
-        `"Kudos" <${EMAIL_USER}>`,
+      recipientEmail,
 
-      to:
-        recipientEmail,
-
-      cc:
-        STATUS_CC_EMAIL,
+      recipientName,
 
       subject,
 
       text,
 
       html,
+
+      cc:
+        true,
 
     });
 
@@ -964,7 +1312,7 @@ Please do not reply to this email.
       referenceId,
 
       messageId:
-        info.messageId,
+        result.messageId,
 
     }
   );
@@ -980,7 +1328,7 @@ Please do not reply to this email.
       true,
 
     messageId:
-      info.messageId,
+      result.messageId,
 
     recipientEmail,
 
@@ -990,6 +1338,46 @@ Please do not reply to this email.
     status,
 
   };
+
+}
+
+
+// =====================================================
+// ESCAPE HTML
+// =====================================================
+
+function escapeHtml(
+  value
+) {
+
+  return String(
+    value || ""
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
