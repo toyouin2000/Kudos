@@ -100,7 +100,7 @@ function MembersTable({
             {isAdmin && (
 
               <th>
-                Gift Card
+                Claim Reward 
               </th>
 
             )}
@@ -270,7 +270,7 @@ function MembersTable({
 
                           ? "Opening..."
 
-                          : "🎁 Send Gift Card"}
+                          : "🎁 Send Claim Reward Link"}
 
                       </button>
 
