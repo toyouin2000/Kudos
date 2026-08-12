@@ -21,39 +21,30 @@ const KEY_SECRET =
 const ACCOUNT_NUMBER =
   process.env.RAZORPAY_ACCOUNT_NUMBER;
 
-
 const RAZORPAY_BASE_URL =
   "https://api.razorpay.com/v1";
-
 
 // =====================================================
 // VALIDATE CONFIG
 // =====================================================
 
 if (!KEY_ID) {
-
   console.warn(
     "WARNING: RAZORPAY_KEY_ID is missing."
   );
-
 }
 
 if (!KEY_SECRET) {
-
   console.warn(
     "WARNING: RAZORPAY_KEY_SECRET is missing."
   );
-
 }
 
 if (!ACCOUNT_NUMBER) {
-
   console.warn(
     "WARNING: RAZORPAY_ACCOUNT_NUMBER is missing."
   );
-
 }
-
 
 // =====================================================
 // HTTP CLIENT
@@ -87,6 +78,122 @@ const razorpayHttp =
 
   });
 
+// =====================================================
+// NORMALIZE RAZORPAY CONTACT NAME
+// =====================================================
+//
+// Razorpay contact name:
+//
+// - Minimum 3 characters
+// - Maximum 50 characters
+// - Allows letters/numbers
+// - Allows spaces
+// - Allows apostrophe
+// - Allows curly apostrophe
+// - Allows hyphen
+// - Allows underscore
+// - Allows slash
+// - Allows parentheses
+// - Allows period
+// - Cannot end with a special character
+//   except period
+//
+// =====================================================
+
+function normalizeRecipientName(
+  name
+) {
+
+  // Convert safely to string.
+  let normalized =
+    String(
+      name || ""
+    )
+      .normalize("NFKC")
+      .trim();
+
+  // Replace tabs/newlines/multiple
+  // spaces with one space.
+  normalized =
+    normalized.replace(
+      /\s+/g,
+      " "
+    );
+
+  // Remove unsupported characters.
+  normalized =
+    normalized.replace(
+      /[^a-zA-Z0-9 .’'()_\/-]/g,
+      ""
+    );
+
+  // Remove leading/trailing spaces.
+  normalized =
+    normalized.trim();
+
+  // ===================================================
+  // MINIMUM LENGTH
+  // ===================================================
+
+  if (
+    normalized.length < 3
+  ) {
+
+    normalized =
+      "Kudos User";
+
+  }
+
+  // ===================================================
+  // MAXIMUM LENGTH
+  // ===================================================
+
+  normalized =
+    normalized.slice(
+      0,
+      50
+    );
+
+  // ===================================================
+  // REMOVE INVALID TRAILING SPECIAL CHARACTERS
+  // ===================================================
+  //
+  // Period is allowed at the end.
+  //
+  // Remove:
+  // '
+  // ’
+  // -
+  // _
+  // /
+  // (
+  // )
+  //
+  // ===================================================
+
+  normalized =
+    normalized
+      .replace(
+        /[’'()_\/-]+$/g,
+        ""
+      )
+      .trim();
+
+  // ===================================================
+  // FINAL LENGTH CHECK
+  // ===================================================
+
+  if (
+    normalized.length < 3
+  ) {
+
+    normalized =
+      "Kudos User";
+
+  }
+
+  return normalized;
+}
 
 // =====================================================
 // CREATE CONTACT
@@ -102,14 +209,18 @@ async function createTestContact({
 
 }) {
 
-  if (!recipientName) {
+  // ===================================================
+  // NORMALIZE NAME
+  // ===================================================
 
-    throw new Error(
-      "Recipient name is required."
+  const contactName =
+    normalizeRecipientName(
+      recipientName
     );
 
-  }
-
+  // ===================================================
+  // VALIDATE EMAIL
+  // ===================================================
 
   if (!recipientEmail) {
 
@@ -119,6 +230,31 @@ async function createTestContact({
 
   }
 
+  const email =
+    String(
+      recipientEmail
+    )
+      .trim()
+      .toLowerCase();
+
+  const emailRegex =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (
+    !emailRegex.test(
+      email
+    )
+  ) {
+
+    throw new Error(
+      "Invalid recipient email."
+    );
+
+  }
+
+  // ===================================================
+  // VALIDATE REFERENCE
+  // ===================================================
 
   if (!referenceId) {
 
@@ -128,28 +264,42 @@ async function createTestContact({
 
   }
 
+  // ===================================================
+  // SAFE REFERENCE
+  // ===================================================
 
-  // Razorpay reference_id has a max length of 40.
   const safeReference =
-    String(referenceId)
+    String(
+      referenceId
+    )
       .replace(
         /[^a-zA-Z0-9_-]/g,
         ""
       )
-      .slice(0, 40);
+      .slice(
+        0,
+        40
+      );
 
+  if (!safeReference) {
+
+    throw new Error(
+      "Invalid Razorpay reference ID."
+    );
+
+  }
+
+  // ===================================================
+  // PAYLOAD
+  // ===================================================
 
   const payload = {
 
     name:
-      recipientName
-        .trim()
-        .slice(0, 50),
+      contactName,
 
     email:
-      recipientEmail
-        .trim()
-        .toLowerCase(),
+      email,
 
     type:
       "employee",
@@ -159,22 +309,47 @@ async function createTestContact({
 
   };
 
+  // ===================================================
+  // DEBUG LOG
+  // ===================================================
 
   console.log(
     "Creating Razorpay TEST contact:",
     {
-      name:
-        payload.name,
+
+      originalName:
+        recipientName,
+
+      normalizedName:
+        contactName,
+
+      nameLength:
+        contactName.length,
+
+      nameCharCodes:
+        [...contactName].map(
+          (character) => ({
+
+            character,
+
+            code:
+              character.charCodeAt(0),
+
+          })
+        ),
 
       email:
-        payload.email,
+        email,
 
       referenceId:
-        payload.reference_id,
+        safeReference,
 
     }
   );
 
+  // ===================================================
+  // CREATE CONTACT
+  // ===================================================
 
   try {
 
@@ -184,14 +359,13 @@ async function createTestContact({
         payload
       );
 
-
     const contact =
       response.data;
-
 
     console.log(
       "Razorpay TEST contact created:",
       {
+
         id:
           contact.id,
 
@@ -200,7 +374,6 @@ async function createTestContact({
 
       }
     );
-
 
     return {
 
@@ -218,7 +391,6 @@ async function createTestContact({
 
     };
 
-
   } catch (error) {
 
     logRazorpayError(
@@ -235,14 +407,14 @@ async function createTestContact({
 
 }
 
-
 // =====================================================
 // CREATE VPA FUND ACCOUNT
 // =====================================================
 //
 // The employee's UPI ID is sent to Razorpay here.
 //
-// We do NOT save it in Supabase.
+// We do NOT save the UPI ID in Supabase.
+//
 // =====================================================
 
 async function createTestVpaFundAccount({
@@ -253,6 +425,10 @@ async function createTestVpaFundAccount({
 
 }) {
 
+  // ===================================================
+  // VALIDATE CONTACT
+  // ===================================================
+
   if (!contactId) {
 
     throw new Error(
@@ -261,6 +437,9 @@ async function createTestVpaFundAccount({
 
   }
 
+  // ===================================================
+  // VALIDATE UPI
+  // ===================================================
 
   if (!upiId) {
 
@@ -270,6 +449,29 @@ async function createTestVpaFundAccount({
 
   }
 
+  const safeUpi =
+    String(
+      upiId
+    )
+      .trim();
+
+  // ===================================================
+  // BASIC UPI VALIDATION
+  // ===================================================
+
+  if (
+    !safeUpi.includes("@")
+  ) {
+
+    throw new Error(
+      "Invalid UPI ID."
+    );
+
+  }
+
+  // ===================================================
+  // PAYLOAD
+  // ===================================================
 
   const payload = {
 
@@ -282,26 +484,33 @@ async function createTestVpaFundAccount({
     vpa: {
 
       address:
-        upiId,
+        safeUpi,
 
     },
 
   };
 
+  // ===================================================
+  // LOG
+  // ===================================================
 
   console.log(
     "Creating Razorpay TEST VPA fund account:",
     {
+
       contactId,
 
       upiId:
         maskUpi(
-          upiId
+          safeUpi
         ),
 
     }
   );
 
+  // ===================================================
+  // CREATE
+  // ===================================================
 
   try {
 
@@ -311,14 +520,13 @@ async function createTestVpaFundAccount({
         payload
       );
 
-
     const fundAccount =
       response.data;
-
 
     console.log(
       "Razorpay TEST VPA fund account created:",
       {
+
         id:
           fundAccount.id,
 
@@ -327,7 +535,6 @@ async function createTestVpaFundAccount({
 
       }
     );
-
 
     return {
 
@@ -345,7 +552,6 @@ async function createTestVpaFundAccount({
 
     };
 
-
   } catch (error) {
 
     logRazorpayError(
@@ -361,7 +567,6 @@ async function createTestVpaFundAccount({
   }
 
 }
-
 
 // =====================================================
 // CREATE TEST PAYOUT
@@ -379,6 +584,10 @@ async function createTestPayout({
 
 }) {
 
+  // ===================================================
+  // VALIDATE ACCOUNT
+  // ===================================================
+
   if (!accountNumber) {
 
     throw new Error(
@@ -387,6 +596,9 @@ async function createTestPayout({
 
   }
 
+  // ===================================================
+  // VALIDATE FUND ACCOUNT
+  // ===================================================
 
   if (!fundAccountId) {
 
@@ -396,11 +608,18 @@ async function createTestPayout({
 
   }
 
+  // ===================================================
+  // VALIDATE AMOUNT
+  // ===================================================
 
   if (
+
     amountInr === undefined ||
+
     amountInr === null ||
+
     Number(amountInr) <= 0
+
   ) {
 
     throw new Error(
@@ -409,6 +628,9 @@ async function createTestPayout({
 
   }
 
+  // ===================================================
+  // VALIDATE REFERENCE
+  // ===================================================
 
   if (!referenceId) {
 
@@ -418,12 +640,14 @@ async function createTestPayout({
 
   }
 
+  // ===================================================
+  // CONVERT INR -> PAISE
+  // ===================================================
 
   const amount =
     Math.round(
       Number(amountInr) * 100
     );
-
 
   if (amount < 100) {
 
@@ -433,19 +657,33 @@ async function createTestPayout({
 
   }
 
+  // ===================================================
+  // IDEMPOTENCY
+  // ===================================================
 
   const idempotencyKey =
     crypto.randomUUID();
 
+  // ===================================================
+  // SAFE REFERENCE
+  // ===================================================
 
   const safeReference =
-    String(referenceId)
+    String(
+      referenceId
+    )
       .replace(
         /[^a-zA-Z0-9_-]/g,
         ""
       )
-      .slice(0, 40);
+      .slice(
+        0,
+        40
+      );
 
+  // ===================================================
+  // PAYLOAD
+  // ===================================================
 
   const payload = {
 
@@ -487,6 +725,9 @@ async function createTestPayout({
 
   };
 
+  // ===================================================
+  // LOG
+  // ===================================================
 
   console.log(
     "Creating Razorpay TEST payout:",
@@ -505,6 +746,9 @@ async function createTestPayout({
     }
   );
 
+  // ===================================================
+  // CREATE PAYOUT
+  // ===================================================
 
   try {
 
@@ -528,10 +772,8 @@ async function createTestPayout({
 
       );
 
-
     const payout =
       response.data;
-
 
     console.log(
       "Razorpay TEST payout created:",
@@ -548,7 +790,6 @@ async function createTestPayout({
 
       }
     );
-
 
     return {
 
@@ -572,7 +813,6 @@ async function createTestPayout({
 
     };
 
-
   } catch (error) {
 
     logRazorpayError(
@@ -589,7 +829,6 @@ async function createTestPayout({
 
 }
 
-
 // =====================================================
 // COMPLETE TEST UPI PAYOUT
 // =====================================================
@@ -602,7 +841,6 @@ async function createTestPayout({
 //    ↓
 // Payout
 //
-// The UPI ID is NEVER returned to our database.
 // =====================================================
 
 async function createTestUpiPayout({
@@ -623,7 +861,10 @@ async function createTestUpiPayout({
     "Starting Razorpay TEST UPI payout:",
     {
 
-      recipientName,
+      recipientName:
+        normalizeRecipientName(
+          recipientName
+        ),
 
       recipientEmail,
 
@@ -638,7 +879,6 @@ async function createTestUpiPayout({
 
     }
   );
-
 
   // ===================================================
   // 1. CREATE CONTACT
@@ -655,7 +895,6 @@ async function createTestUpiPayout({
 
     });
 
-
   // ===================================================
   // 2. CREATE VPA FUND ACCOUNT
   // ===================================================
@@ -669,7 +908,6 @@ async function createTestUpiPayout({
       upiId,
 
     });
-
 
   // ===================================================
   // 3. CREATE PAYOUT
@@ -690,6 +928,9 @@ async function createTestUpiPayout({
 
     });
 
+  // ===================================================
+  // RETURN
+  // ===================================================
 
   return {
 
@@ -715,7 +956,6 @@ async function createTestUpiPayout({
 
 }
 
-
 // =====================================================
 // MASK UPI FOR LOGGING
 // =====================================================
@@ -730,14 +970,13 @@ function maskUpi(
 
   }
 
-
   const value =
-    String(upi);
-
+    String(
+      upi
+    );
 
   const index =
     value.indexOf("@");
-
 
   if (index <= 0) {
 
@@ -745,19 +984,16 @@ function maskUpi(
 
   }
 
-
   const name =
     value.substring(
       0,
       index
     );
 
-
   const domain =
     value.substring(
       index
     );
-
 
   if (
     name.length <= 2
@@ -767,18 +1003,20 @@ function maskUpi(
 
   }
 
-
   return (
+
     name.substring(
       0,
       2
     ) +
+
     "***" +
+
     domain
+
   );
 
 }
-
 
 // =====================================================
 // RAZORPAY ERROR LOGGING
@@ -807,9 +1045,8 @@ function logRazorpayError(
 
 }
 
-
 // =====================================================
-// NORMALIZE ERROR
+// NORMALIZE RAZORPAY ERROR
 // =====================================================
 
 function normalizeRazorpayError(
@@ -820,12 +1057,12 @@ function normalizeRazorpayError(
   const razorpayError =
     error.response?.data?.error;
 
-
   const description =
     razorpayError?.description ||
-    error.response?.data?.message ||
-    error.message;
 
+    error.response?.data?.message ||
+
+    error.message;
 
   const normalized =
     new Error(
@@ -833,24 +1070,19 @@ function normalizeRazorpayError(
       fallback
     );
 
-
   normalized.code =
     razorpayError?.code ||
     "RAZORPAY_TEST_ERROR";
 
-
   normalized.status =
     error.response?.status;
-
 
   normalized.razorpay =
     error.response?.data;
 
-
   return normalized;
 
 }
-
 
 // =====================================================
 // EXPORT
