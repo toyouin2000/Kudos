@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
     "@slack/bolt": "^5.0.0",
     "@slack/oauth": "^4.0.0",
     "@slack/web-api": "^8.0.0",
