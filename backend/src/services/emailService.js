@@ -16,6 +16,8 @@ const transporter =
     secure:
       process.env.SMTP_SECURE === "true",
 
+    family: 4,
+
     auth: {
 
       user:
@@ -25,6 +27,10 @@ const transporter =
         process.env.SMTP_PASSWORD,
 
     },
+
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
 
   });
 
