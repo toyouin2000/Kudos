@@ -28,9 +28,9 @@ const transporter =
 
     },
 
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 20000,
+    connectionTimeout: 200000,
+    greetingTimeout: 200000,
+    socketTimeout: 200000,
 
   });
 
