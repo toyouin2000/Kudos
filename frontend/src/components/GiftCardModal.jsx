@@ -274,7 +274,7 @@ function GiftCardModal({
           <div>
 
             <h2>
-              Send Amazon Gift Card
+              Send Claim Reward Link
             </h2>
 
             <p>
@@ -318,7 +318,7 @@ function GiftCardModal({
         <div className="recipient-email">
 
           <span>
-            Recipient
+            Recipient: 
           </span>
 
           <strong>
