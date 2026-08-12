@@ -1,125 +1,49 @@
-const nodemailer = require("nodemailer");
+// =====================================================
+// BREVO EMAIL SERVICE
+// =====================================================
+//
+// Uses Brevo's HTTPS API directly.
+// No SMTP is required.
+//
+// Node.js 18+ has built-in fetch.
+// Node.js 24 supports it.
+// =====================================================
 
 // =====================================================
-// SMTP CONFIGURATION
+// CONFIGURATION
 // =====================================================
 
-const SMTP_HOST =
-  process.env.SMTP_HOST || "smtp.gmail.com";
-
-const SMTP_PORT =
-  Number(process.env.SMTP_PORT || 587);
-
-const SMTP_SECURE =
-  process.env.SMTP_SECURE === "true";
-
-const SMTP_USER =
-  process.env.SMTP_USER ||
-  process.env.EMAIL_USER;
-
-const SMTP_PASSWORD =
-  process.env.SMTP_PASSWORD ||
-  process.env.EMAIL_PASSWORD;
+const BREVO_API_KEY =
+  process.env.BREVO_API_KEY;
 
 const EMAIL_FROM =
-  process.env.EMAIL_FROM ||
-  SMTP_USER;
+  process.env.EMAIL_FROM;
+
+const EMAIL_FROM_NAME =
+  process.env.EMAIL_FROM_NAME ||
+  "Kudos";
+
+const STATUS_CC_EMAIL =
+  process.env.REWARD_STATUS_CC_EMAIL ||
+  "testdishank@gmail.com";
 
 // =====================================================
 // VALIDATE CONFIG
 // =====================================================
 
-if (!SMTP_USER) {
+if (!BREVO_API_KEY) {
+
   console.warn(
-    "WARNING: SMTP_USER / EMAIL_USER is missing."
+    "WARNING: BREVO_API_KEY is missing."
   );
+
 }
 
-if (!SMTP_PASSWORD) {
+if (!EMAIL_FROM) {
+
   console.warn(
-    "WARNING: SMTP_PASSWORD / EMAIL_PASSWORD is missing."
+    "WARNING: EMAIL_FROM is missing."
   );
-}
-
-// =====================================================
-// SMTP TRANSPORTER
-// =====================================================
-
-const transporter =
-  nodemailer.createTransport({
-
-    host:
-      SMTP_HOST,
-
-    port:
-      SMTP_PORT,
-
-    secure:
-      SMTP_SECURE,
-
-    // Required for Gmail SMTP on port 587.
-    // Ignored when using secure=true / port 465.
-    requireTLS:
-      SMTP_PORT === 587,
-
-    auth: {
-
-      user:
-        SMTP_USER,
-
-      pass:
-        SMTP_PASSWORD,
-
-    },
-
-    // Render/cloud environments can occasionally
-    // take longer to establish an SMTP connection.
-    connectionTimeout:
-      30000,
-
-    greetingTimeout:
-      30000,
-
-    socketTimeout:
-      30000,
-
-  });
-
-// =====================================================
-// VERIFY SMTP CONNECTION
-// =====================================================
-
-async function verifyEmailConnection() {
-
-  try {
-
-    await transporter.verify();
-
-    console.log(
-      "Claim email SMTP connection successful."
-    );
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      "Claim email SMTP connection failed:",
-      {
-        code:
-          error.code,
-
-        command:
-          error.command,
-
-        message:
-          error.message,
-      }
-    );
-
-    return false;
-
-  }
 
 }
 
@@ -155,18 +79,18 @@ async function sendRewardClaimEmail({
 
   }
 
-  if (!SMTP_USER) {
+  if (!BREVO_API_KEY) {
 
     throw new Error(
-      "SMTP_USER / EMAIL_USER is missing."
+      "BREVO_API_KEY is missing."
     );
 
   }
 
-  if (!SMTP_PASSWORD) {
+  if (!EMAIL_FROM) {
 
     throw new Error(
-      "SMTP_PASSWORD / EMAIL_PASSWORD is missing."
+      "EMAIL_FROM is missing."
     );
 
   }
@@ -178,18 +102,6 @@ async function sendRewardClaimEmail({
     );
 
   }
-
-  // ===================================================
-  // AMOUNT
-  // ===================================================
-
-  const numericAmount =
-    Number(amountInr || 0);
-
-  const formattedAmount =
-    numericAmount.toLocaleString(
-      "en-IN"
-    );
 
   // ===================================================
   // EXPIRY
@@ -217,7 +129,19 @@ async function sendRewardClaimEmail({
       : "the expiry date";
 
   // ===================================================
-  // SAFE HTML VALUES
+  // AMOUNT
+  // ===================================================
+
+  const numericAmount =
+    Number(amountInr || 0);
+
+  const formattedAmount =
+    numericAmount.toLocaleString(
+      "en-IN"
+    );
+
+  // ===================================================
+  // SAFE VALUES
   // ===================================================
 
   const safeRecipientName =
@@ -239,7 +163,7 @@ async function sendRewardClaimEmail({
     "Your Kudos reward is ready 🎁";
 
   // ===================================================
-  // PLAIN TEXT
+  // TEXT EMAIL
   // ===================================================
 
   const text = `
@@ -269,7 +193,7 @@ Kudos
 `;
 
   // ===================================================
-  // HTML
+  // HTML EMAIL
   // ===================================================
 
   const html = `
@@ -284,7 +208,7 @@ Kudos
 
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1"
+    content="width=device-width, initial-scale=1"
   />
 
   <title>
@@ -466,30 +390,179 @@ Kudos
 `;
 
   // ===================================================
-  // SEND
+  // BREVO REQUEST
+  // ===================================================
+
+  const payload = {
+
+    sender: {
+
+      name:
+        EMAIL_FROM_NAME,
+
+      email:
+        EMAIL_FROM,
+
+    },
+
+    to: [
+
+      {
+
+        email:
+          recipientEmail,
+
+        name:
+          recipientName ||
+          "Kudos User",
+
+      },
+
+    ],
+
+    subject,
+
+    textContent:
+      text,
+
+    htmlContent:
+      html,
+
+  };
+
+  // ===================================================
+  // CC
+  // ===================================================
+
+  if (
+
+    STATUS_CC_EMAIL &&
+
+    STATUS_CC_EMAIL.toLowerCase() !==
+      recipientEmail.toLowerCase()
+
+  ) {
+
+    payload.cc = [
+
+      {
+
+        email:
+          STATUS_CC_EMAIL,
+
+      },
+
+    ];
+
+  }
+
+  // ===================================================
+  // SEND THROUGH BREVO HTTPS API
   // ===================================================
 
   try {
 
-    const result =
-      await transporter.sendMail({
+    console.log(
+      "Sending reward claim email through Brevo:",
+      {
 
-        from:
-          `"Kudos" <${EMAIL_FROM}>`,
+        recipientEmail,
 
-        to:
-          recipientEmail,
+        cc:
+          STATUS_CC_EMAIL,
 
-        subject,
+      }
+    );
 
-        text,
+    const response =
+      await fetch(
+        "https://api.brevo.com/v3/smtp/email",
+        {
 
-        html,
+          method:
+            "POST",
 
-      });
+          headers: {
+
+            accept:
+              "application/json",
+
+            "api-key":
+              BREVO_API_KEY,
+
+            "content-type":
+              "application/json",
+
+          },
+
+          body:
+            JSON.stringify(
+              payload
+            ),
+
+        }
+      );
 
     // =================================================
-    // LOG
+    // RESPONSE
+    // =================================================
+
+    const responseText =
+      await response.text();
+
+    let result;
+
+    try {
+
+      result =
+        JSON.parse(
+          responseText
+        );
+
+    } catch {
+
+      result = {
+
+        raw:
+          responseText,
+
+      };
+
+    }
+
+    // =================================================
+    // ERROR
+    // =================================================
+
+    if (!response.ok) {
+
+      console.error(
+        "Brevo API error:",
+        {
+
+          status:
+            response.status,
+
+          response:
+            result,
+
+        }
+      );
+
+      throw new Error(
+
+        result.message ||
+
+        result.code ||
+
+        `Brevo API failed with status ${response.status}`
+
+      );
+
+    }
+
+    // =================================================
+    // SUCCESS
     // =================================================
 
     console.log(
@@ -498,15 +571,14 @@ Kudos
 
         recipientEmail,
 
+        cc:
+          STATUS_CC_EMAIL,
+
         messageId:
           result.messageId,
 
       }
     );
-
-    // =================================================
-    // RETURN
-    // =================================================
 
     return {
 
@@ -518,6 +590,9 @@ Kudos
 
       recipientEmail,
 
+      cc:
+        STATUS_CC_EMAIL,
+
     };
 
   } catch (error) {
@@ -527,12 +602,6 @@ Kudos
       {
 
         recipientEmail,
-
-        code:
-          error.code,
-
-        command:
-          error.command,
 
         message:
           error.message,
@@ -592,7 +661,5 @@ function escapeHtml(
 module.exports = {
 
   sendRewardClaimEmail,
-
-  verifyEmailConnection,
 
 };
