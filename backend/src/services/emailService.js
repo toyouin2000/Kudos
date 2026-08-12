@@ -1,39 +1,127 @@
-const nodemailer =
-  require("nodemailer");
+const nodemailer = require("nodemailer");
 
+// =====================================================
+// SMTP CONFIGURATION
+// =====================================================
+
+const SMTP_HOST =
+  process.env.SMTP_HOST || "smtp.gmail.com";
+
+const SMTP_PORT =
+  Number(process.env.SMTP_PORT || 587);
+
+const SMTP_SECURE =
+  process.env.SMTP_SECURE === "true";
+
+const SMTP_USER =
+  process.env.SMTP_USER ||
+  process.env.EMAIL_USER;
+
+const SMTP_PASSWORD =
+  process.env.SMTP_PASSWORD ||
+  process.env.EMAIL_PASSWORD;
+
+const EMAIL_FROM =
+  process.env.EMAIL_FROM ||
+  SMTP_USER;
+
+// =====================================================
+// VALIDATE CONFIG
+// =====================================================
+
+if (!SMTP_USER) {
+  console.warn(
+    "WARNING: SMTP_USER / EMAIL_USER is missing."
+  );
+}
+
+if (!SMTP_PASSWORD) {
+  console.warn(
+    "WARNING: SMTP_PASSWORD / EMAIL_PASSWORD is missing."
+  );
+}
+
+// =====================================================
+// SMTP TRANSPORTER
+// =====================================================
 
 const transporter =
   nodemailer.createTransport({
 
     host:
-      process.env.SMTP_HOST,
+      SMTP_HOST,
 
     port:
-      Number(
-        process.env.SMTP_PORT || 587
-      ),
+      SMTP_PORT,
 
     secure:
-      process.env.SMTP_SECURE === "true",
+      SMTP_SECURE,
 
-    family: 4,
+    // Required for Gmail SMTP on port 587.
+    // Ignored when using secure=true / port 465.
+    requireTLS:
+      SMTP_PORT === 587,
 
     auth: {
 
       user:
-        process.env.SMTP_USER,
+        SMTP_USER,
 
       pass:
-        process.env.SMTP_PASSWORD,
+        SMTP_PASSWORD,
 
     },
 
-    connectionTimeout: 200000,
-    greetingTimeout: 200000,
-    socketTimeout: 200000,
+    // Render/cloud environments can occasionally
+    // take longer to establish an SMTP connection.
+    connectionTimeout:
+      30000,
+
+    greetingTimeout:
+      30000,
+
+    socketTimeout:
+      30000,
 
   });
 
+// =====================================================
+// VERIFY SMTP CONNECTION
+// =====================================================
+
+async function verifyEmailConnection() {
+
+  try {
+
+    await transporter.verify();
+
+    console.log(
+      "Claim email SMTP connection successful."
+    );
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "Claim email SMTP connection failed:",
+      {
+        code:
+          error.code,
+
+        command:
+          error.command,
+
+        message:
+          error.message,
+      }
+    );
+
+    return false;
+
+  }
+
+}
 
 // =====================================================
 // SEND CLAIM EMAIL
@@ -55,6 +143,10 @@ async function sendRewardClaimEmail({
 
 }) {
 
+  // ===================================================
+  // VALIDATION
+  // ===================================================
+
   if (!recipientEmail) {
 
     throw new Error(
@@ -63,26 +155,92 @@ async function sendRewardClaimEmail({
 
   }
 
+  if (!SMTP_USER) {
+
+    throw new Error(
+      "SMTP_USER / EMAIL_USER is missing."
+    );
+
+  }
+
+  if (!SMTP_PASSWORD) {
+
+    throw new Error(
+      "SMTP_PASSWORD / EMAIL_PASSWORD is missing."
+    );
+
+  }
+
+  if (!claimUrl) {
+
+    throw new Error(
+      "Claim URL is required."
+    );
+
+  }
+
+  // ===================================================
+  // AMOUNT
+  // ===================================================
+
+  const numericAmount =
+    Number(amountInr || 0);
+
+  const formattedAmount =
+    numericAmount.toLocaleString(
+      "en-IN"
+    );
+
+  // ===================================================
+  // EXPIRY
+  // ===================================================
 
   const expiryText =
     expiresAt
+
       ? new Date(
           expiresAt
         ).toLocaleString(
           "en-IN",
           {
+            timeZone:
+              "Asia/Kolkata",
+
             dateStyle:
               "medium",
+
             timeStyle:
               "short",
           }
         )
+
       : "the expiry date";
 
+  // ===================================================
+  // SAFE HTML VALUES
+  // ===================================================
+
+  const safeRecipientName =
+    escapeHtml(
+      recipientName ||
+      "there"
+    );
+
+  const safeClaimUrl =
+    escapeHtml(
+      claimUrl
+    );
+
+  // ===================================================
+  // SUBJECT
+  // ===================================================
 
   const subject =
     "Your Kudos reward is ready 🎁";
 
+  // ===================================================
+  // PLAIN TEXT
+  // ===================================================
 
   const text = `
 
@@ -90,10 +248,8 @@ Hi ${recipientName || "there"},
 
 You have received a Kudos reward.
 
-Points: ${points}
-Reward value: ₹${Number(
-    amountInr
-  ).toLocaleString("en-IN")}
+Points: ${points || 0}
+Reward value: ₹${formattedAmount}
 
 Claim your reward here:
 
@@ -112,6 +268,9 @@ Kudos
 
 `;
 
+  // ===================================================
+  // HTML
+  // ===================================================
 
   const html = `
 
@@ -119,12 +278,27 @@ Kudos
 
 <html>
 
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+
+  <title>
+    Your Kudos reward is ready
+  </title>
+
+</head>
+
 <body
   style="
     margin:0;
     padding:0;
     background:#f5f7f9;
-    font-family:Arial,sans-serif;
+    font-family:Arial,Helvetica,sans-serif;
   "
 >
 
@@ -135,31 +309,37 @@ Kudos
       background:#ffffff;
       border-radius:12px;
       padding:40px;
+      box-sizing:border-box;
     "
   >
 
-    <h1>
+    <h1
+      style="
+        margin:0 0 8px;
+        color:#111827;
+      "
+    >
       Kudos 🎁
     </h1>
 
-
-    <h2>
+    <h2
+      style="
+        margin:0 0 20px;
+        color:#111827;
+      "
+    >
       Your reward is ready
     </h2>
 
-
     <p>
-      Hi ${escapeHtml(
-        recipientName ||
-        "there"
-      )},
+      Hi ${safeRecipientName},
     </p>
-
 
     <p>
       You have received a Kudos reward.
     </p>
 
+    <!-- REWARD -->
 
     <div
       style="
@@ -180,21 +360,16 @@ Kudos
         Reward value
       </div>
 
-
       <div
         style="
           font-size:32px;
           font-weight:bold;
           margin-top:8px;
+          color:#111827;
         "
       >
-        ₹${Number(
-          amountInr
-        ).toLocaleString(
-          "en-IN"
-        )}
+        ₹${formattedAmount}
       </div>
-
 
       <div
         style="
@@ -202,16 +377,16 @@ Kudos
           margin-top:8px;
         "
       >
-        ${points} Kudos points
+        ${points || 0} Kudos points
       </div>
 
     </div>
-
 
     <p>
       Click below to claim your reward.
     </p>
 
+    <!-- CLAIM BUTTON -->
 
     <div
       style="
@@ -221,7 +396,7 @@ Kudos
     >
 
       <a
-        href="${claimUrl}"
+        href="${safeClaimUrl}"
         style="
           display:inline-block;
           background:#111827;
@@ -232,15 +407,10 @@ Kudos
           font-weight:bold;
         "
       >
-        Claim ₹${Number(
-          amountInr
-        ).toLocaleString(
-          "en-IN"
-        )}
+        Claim ₹${formattedAmount}
       </a>
 
     </div>
-
 
     <p
       style="
@@ -251,6 +421,7 @@ Kudos
       Claim before ${expiryText}.
     </p>
 
+    <!-- TEST MODE -->
 
     <div
       style="
@@ -260,6 +431,7 @@ Kudos
         border-radius:8px;
         font-size:13px;
         margin-top:25px;
+        line-height:1.5;
       "
     >
 
@@ -274,7 +446,6 @@ Kudos
       be transferred.
 
     </div>
-
 
     <p
       style="
@@ -292,52 +463,88 @@ Kudos
 
 </html>
 
-  `;
+`;
 
+  // ===================================================
+  // SEND
+  // ===================================================
 
-  const result =
-    await transporter.sendMail({
+  try {
 
-      from:
-        process.env.EMAIL_FROM,
+    const result =
+      await transporter.sendMail({
 
-      to:
+        from:
+          `"Kudos" <${EMAIL_FROM}>`,
+
+        to:
+          recipientEmail,
+
+        subject,
+
+        text,
+
+        html,
+
+      });
+
+    // =================================================
+    // LOG
+    // =================================================
+
+    console.log(
+      "Reward claim email sent:",
+      {
+
         recipientEmail,
 
-      subject,
+        messageId:
+          result.messageId,
 
-      text,
+      }
+    );
 
-      html,
+    // =================================================
+    // RETURN
+    // =================================================
 
-    });
+    return {
 
-
-  console.log(
-    "Reward claim email sent:",
-    {
-
-      recipientEmail,
+      success:
+        true,
 
       messageId:
         result.messageId,
 
-    }
-  );
+      recipientEmail,
 
+    };
 
-  return {
+  } catch (error) {
 
-    success:
-      true,
+    console.error(
+      "Reward claim email failed:",
+      {
 
-    messageId:
-      result.messageId,
+        recipientEmail,
 
-  };
+        code:
+          error.code,
+
+        command:
+          error.command,
+
+        message:
+          error.message,
+
+      }
+    );
+
+    throw error;
+
+  }
 
 }
-
 
 // =====================================================
 // ESCAPE HTML
@@ -350,22 +557,27 @@ function escapeHtml(
   return String(
     value || ""
   )
+
     .replace(
       /&/g,
       "&amp;"
     )
+
     .replace(
       /</g,
       "&lt;"
     )
+
     .replace(
       />/g,
       "&gt;"
     )
+
     .replace(
       /"/g,
       "&quot;"
     )
+
     .replace(
       /'/g,
       "&#039;"
@@ -373,9 +585,14 @@ function escapeHtml(
 
 }
 
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = {
 
   sendRewardClaimEmail,
+
+  verifyEmailConnection,
 
 };
