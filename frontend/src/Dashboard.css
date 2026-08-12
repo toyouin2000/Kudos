@@ -1,0 +1,1003 @@
+.dashboard {
+  min-height: 100vh;
+  padding: 40px;
+  background: #0f1512;
+  color: #f4f7f5;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.dashboard-header {
+  max-width: 1400px;
+  margin: 0 auto 40px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.brand {
+  color: #6ee7a1;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: -1px;
+}
+
+.dashboard-header p {
+  margin-top: 8px;
+  color: #8d9992;
+}
+
+.dashboard-header strong {
+  color: #dfe8e2;
+}
+
+.logout-button {
+  padding: 10px 18px;
+
+  border: 1px solid #34433b;
+  border-radius: 9px;
+
+  background: #151d19;
+  color: #dfe8e2;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.logout-button:hover {
+  background: #1d2822;
+}
+
+
+/* =====================================================
+   BALANCES
+===================================================== */
+
+.balance-grid {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 18px;
+}
+
+
+.balance-card,
+.gift-card {
+  min-height: 160px;
+
+  padding: 26px;
+
+  border: 1px solid #29372f;
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #17211c,
+      #121a16
+    );
+}
+
+
+.balance-card-accent {
+  border-color: #315d45;
+
+  box-shadow:
+    inset 0 1px 0
+      rgba(110, 231, 161, 0.08);
+}
+
+
+.balance-card-title,
+.gift-card-label {
+  color: #8d9992;
+  font-size: 14px;
+}
+
+
+.balance-card-value,
+.gift-card strong {
+  display: block;
+
+  margin: 14px 0 8px;
+
+  font-size: 42px;
+  font-weight: 700;
+
+  letter-spacing: -1.5px;
+}
+
+
+.balance-card-subtitle,
+.gift-card p {
+  margin: 0;
+
+  color: #65736b;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   GIFT CARD
+===================================================== */
+
+.gift-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+
+.gift-card strong {
+  color: #6ee7a1;
+}
+
+
+.gift-card-button {
+  width: 100%;
+
+  margin-top: 20px;
+
+  padding: 12px 16px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #55c98a;
+
+  color: #07130c;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.gift-card-button:hover:not(:disabled) {
+  background: #6ee7a1;
+  transform: translateY(-1px);
+}
+
+
+.gift-card-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+
+/* =====================================================
+   SECTIONS
+===================================================== */
+
+.dashboard-section {
+  max-width: 1400px;
+
+  margin:
+    0 auto 32px;
+
+  padding: 24px;
+
+  border: 1px solid #29372f;
+
+  border-radius: 16px;
+
+  background: #151d19;
+}
+
+
+.section-header {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  margin-bottom: 20px;
+}
+
+
+.section-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+}
+
+
+.section-header p {
+  margin: 6px 0 0;
+
+  color: #748078;
+
+  font-size: 13px;
+}
+
+
+.member-count {
+  padding: 7px 12px;
+
+  border-radius: 20px;
+
+  background: #1d2922;
+
+  color: #8da497;
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+
+.members-table,
+.transactions-table {
+  width: 100%;
+
+  border-collapse:
+    collapse;
+}
+
+
+.members-table th,
+.transactions-table th {
+  padding:
+    13px 14px;
+
+  text-align: left;
+
+  color: #68756e;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.05em;
+
+  border-bottom:
+    1px solid #29372f;
+}
+
+
+.members-table td,
+.transactions-table td {
+  padding:
+    17px 14px;
+
+  border-bottom:
+    1px solid #222d27;
+
+  color: #cbd5ce;
+
+  font-size: 14px;
+}
+
+
+.members-table tbody tr:hover,
+.transactions-table tbody tr:hover {
+  background: #18211d;
+}
+
+
+.members-table tbody tr:last-child td,
+.transactions-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* =====================================================
+   EMPLOYEE
+===================================================== */
+
+.employee-cell {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+
+.employee-avatar {
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #284c38,
+      #1b2d23
+    );
+
+  color: #83dfa8;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+
+.employee-name {
+  color: #e0e8e3;
+
+  font-weight: 600;
+}
+
+
+.employee-email {
+  margin-top: 3px;
+
+  color: #66736c;
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+   ROLE
+===================================================== */
+
+.role-badge {
+  display: inline-block;
+
+  padding:
+    4px 9px;
+
+  border-radius: 6px;
+
+  background: #1c2520;
+
+  color: #87938c;
+
+  font-size: 11px;
+
+  text-transform:
+    capitalize;
+}
+
+
+.role-admin {
+  background: #193225;
+
+  color: #72d99b;
+}
+
+
+/* =====================================================
+   POINTS
+===================================================== */
+
+.reward-points {
+  color: #d7e2da;
+
+  font-weight: 600;
+}
+
+
+.received-points,
+.transaction-points {
+  color: #6ee7a1;
+
+  font-weight: 700;
+}
+
+
+.transaction-message {
+  color: #7d8982;
+}
+
+
+/* =====================================================
+   EMPTY
+===================================================== */
+
+.table-empty {
+  padding: 50px !important;
+
+  text-align: center !important;
+
+  color: #66736c !important;
+}
+
+
+/* =====================================================
+   SUCCESS
+===================================================== */
+
+.success-box {
+  max-width: 1400px;
+
+  margin:
+    0 auto 24px;
+
+  padding: 13px 16px;
+
+  border:
+    1px solid #285c3e;
+
+  border-radius: 10px;
+
+  background: #13271c;
+
+  color: #7be3a3;
+
+  font-size: 14px;
+}
+
+.success-box span {
+  margin-right: 8px;
+}
+
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+.modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  padding: 20px;
+
+  background:
+    rgba(0, 0, 0, 0.7);
+
+  backdrop-filter:
+    blur(5px);
+}
+
+
+.gift-modal {
+  width: 100%;
+  max-width: 460px;
+
+  padding: 28px;
+
+  border:
+    1px solid #34463b;
+
+  border-radius: 18px;
+
+  background: #151d19;
+
+  box-shadow:
+    0 25px 80px
+      rgba(0, 0, 0, 0.5);
+}
+
+
+.modal-header {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  margin-bottom: 25px;
+}
+
+
+.modal-header h2 {
+  margin: 0;
+
+  font-size: 22px;
+}
+
+
+.modal-header p {
+  margin:
+    6px 0 0;
+
+  color: #77847c;
+
+  font-size: 13px;
+}
+
+
+.modal-close {
+  border: none;
+
+  background: none;
+
+  color: #77847c;
+
+  font-size: 26px;
+
+  cursor: pointer;
+}
+
+
+.conversion-info {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  padding: 14px;
+
+  margin-bottom: 22px;
+
+  border-radius: 10px;
+
+  background: #1a2720;
+
+  color: #87948c;
+
+  font-size: 13px;
+}
+
+
+.conversion-info strong {
+  color: #6ee7a1;
+}
+
+
+.modal-label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #a6b1aa;
+
+  font-size: 13px;
+}
+
+
+.points-input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 13px 14px;
+
+  border:
+    1px solid #35443b;
+
+  border-radius: 9px;
+
+  outline: none;
+
+  background: #101713;
+
+  color: #f4f7f5;
+
+  font-size: 16px;
+}
+
+
+.points-input:focus {
+  border-color: #55c98a;
+}
+
+
+.available-points {
+  margin-top: 8px;
+
+  color: #69766e;
+
+  font-size: 12px;
+}
+
+
+.redemption-value {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  margin-top: 24px;
+
+  padding:
+    18px;
+
+  border-radius: 12px;
+
+  background: #101713;
+}
+
+
+.redemption-value span {
+  color: #7d8982;
+
+  font-size: 13px;
+}
+
+
+.redemption-value strong {
+  color: #6ee7a1;
+
+  font-size: 24px;
+}
+
+
+.modal-error {
+  margin-top: 15px;
+
+  padding: 11px;
+
+  border-radius: 8px;
+
+  background: #321c1c;
+
+  color: #ffaaaa;
+
+  font-size: 13px;
+}
+
+
+.modal-actions {
+  display: flex;
+
+  justify-content:
+    flex-end;
+
+  gap: 10px;
+
+  margin-top: 25px;
+}
+
+
+.primary-button,
+.secondary-button {
+  padding:
+    11px 16px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+}
+
+
+.primary-button {
+  border: none;
+
+  background: #55c98a;
+
+  color: #07130c;
+}
+
+
+.primary-button:hover {
+  background: #6ee7a1;
+}
+
+
+.secondary-button {
+  border:
+    1px solid #34433b;
+
+  background: #18211d;
+
+  color: #d4ddd7;
+}
+
+
+/* =====================================================
+   LOADING / ERROR
+===================================================== */
+
+.dashboard-loading,
+.dashboard-error {
+  min-height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content:
+    center;
+
+  align-items:
+    center;
+
+  gap: 15px;
+
+  background: #0f1512;
+
+  color: #e8eee9;
+}
+
+
+.dashboard-error p {
+  color: #87938c;
+}
+
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+
+  border:
+    3px solid #26352d;
+
+  border-top-color:
+    #6ee7a1;
+
+  border-radius: 50%;
+
+  animation:
+    spin 0.8s linear infinite;
+}
+
+
+@keyframes spin {
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 900px) {
+
+  .dashboard {
+    padding: 22px;
+  }
+
+  .balance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header {
+    align-items:
+      flex-start;
+  }
+
+  .dashboard-header h1 {
+    font-size: 28px;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .dashboard {
+    padding: 16px;
+  }
+
+  .dashboard-header {
+    flex-direction:
+      column;
+
+    gap: 18px;
+  }
+
+  .dashboard-section {
+    padding: 16px;
+  }
+
+  .section-header {
+    align-items:
+      flex-start;
+
+    gap: 12px;
+  }
+
+
+
+}
+
+/* =====================================================
+   HEADER ACTIONS
+===================================================== */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+
+.slack-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 8px 12px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+
+.slack-connected {
+  background: #13271c;
+  color: #72d99b;
+}
+
+
+.slack-disconnected {
+  background: #2a2116;
+  color: #e6b96b;
+}
+
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+
+.slack-controls {
+  position: relative;
+}
+
+
+.slack-connect-button,
+.slack-sync-button {
+  padding: 9px 13px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+.slack-connect-button {
+  border: none;
+
+  background: #55c98a;
+
+  color: #07130c;
+}
+
+
+.slack-connect-button:hover {
+  background: #6ee7a1;
+}
+
+
+.slack-sync-button {
+  border:
+    1px solid #34483c;
+
+  background: #18211d;
+
+  color: #b9c6be;
+}
+
+
+.slack-sync-button:hover:not(:disabled) {
+  background: #202c25;
+}
+
+
+.slack-sync-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+.slack-control-error {
+  position: absolute;
+
+  top: calc(100% + 8px);
+
+  right: 0;
+
+  width: 240px;
+
+  padding: 9px;
+
+  border-radius: 7px;
+
+  background: #351d1d;
+
+  color: #ffaaaa;
+
+  font-size: 11px;
+
+  z-index: 5;
+}
+
+
+/* =====================================================
+   MEMBER GIFT CARD BUTTON
+===================================================== */
+
+.member-gift-button {
+  padding:
+    7px 11px;
+
+  border:
+    1px solid #315d45;
+
+  border-radius: 7px;
+
+  background: #17251d;
+
+  color: #6ee7a1;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.member-gift-button:hover:not(:disabled) {
+  background: #20382b;
+
+  border-color:
+    #47795b;
+}
+
+
+.member-gift-button:disabled {
+  opacity: 0.35;
+
+  cursor: not-allowed;
+}

@@ -1,0 +1,294 @@
+/* =====================================================
+   CLAIM PAGE
+   ===================================================== */
+
+.claim-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f5f7f9;
+  box-sizing: border-box;
+}
+
+
+/* =====================================================
+   CARD
+   ===================================================== */
+
+.claim-card {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 40px;
+  box-sizing: border-box;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+
+/* =====================================================
+   BRAND
+   ===================================================== */
+
+.claim-brand {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 28px;
+}
+
+
+/* =====================================================
+   HEADINGS
+   ===================================================== */
+
+.claim-card h1 {
+  margin: 0 0 12px;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #111827;
+}
+
+
+.claim-card p {
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+
+.claim-subtitle {
+  margin-bottom: 28px;
+}
+
+
+/* =====================================================
+   AMOUNT
+   ===================================================== */
+
+.claim-amount {
+  margin: 24px 0 8px;
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  color: #111827;
+  text-align: center;
+}
+
+
+.claim-points {
+  margin-bottom: 32px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+
+/* =====================================================
+   FORM
+   ===================================================== */
+
+.claim-card form {
+  margin-top: 24px;
+}
+
+
+.claim-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+
+.claim-card input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  box-sizing: border-box;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #111827;
+  font-size: 15px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.claim-card input:focus {
+  border-color: #111827;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(17, 24, 39, 0.08);
+}
+
+
+.input-help {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   BUTTON
+   ===================================================== */
+
+.claim-card button {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 20px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
+}
+
+
+.claim-card button:hover {
+  opacity: 0.92;
+}
+
+
+.claim-card button:active {
+  transform: translateY(1px);
+}
+
+
+.claim-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* =====================================================
+   ERROR
+   ===================================================== */
+
+.claim-error {
+  margin-top: 16px;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+
+  color: #b91c1c !important;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   SUCCESS
+   ===================================================== */
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 20px;
+
+  border-radius: 50%;
+
+  background: #ecfdf5;
+  color: #047857;
+
+  font-size: 28px;
+  font-weight: 800;
+}
+
+
+.claim-status {
+  margin-top: 20px;
+  padding: 14px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-size: 14px;
+}
+
+
+/* =====================================================
+   TEST MODE NOTICE
+   ===================================================== */
+
+.test-notice {
+  margin-top: 24px;
+
+  padding: 14px;
+
+  border-radius: 8px;
+
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+
+  color: #9a3412;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+  .claim-page {
+    padding: 16px;
+  }
+
+
+  .claim-card {
+    padding: 28px 22px;
+    border-radius: 12px;
+  }
+
+
+  .claim-card h1 {
+    font-size: 24px;
+  }
+
+
+  .claim-amount {
+    font-size: 36px;
+  }
+
+}
