@@ -2,7 +2,7 @@
 
 Kudos is an employee recognition and rewards platform that lets
 employees recognize teammates directly through Slack. Employees receive
-a monthly allocation of points that can be given as kudos, while earned
+a monthly allocation of points that can be given as kudos, while earned 
 points can be redeemed for a monetary reward.
 
 > **Current scope:** This repository is an MVP/test-mode implementation.
